@@ -1,0 +1,74 @@
+{
+    "templateId": "ro-crate",
+    "organizationId": "dsw",
+    "version": "0.1.0",
+    "name": "RO-Crate",
+    "description": "RO-Crate export from DSW projects",
+    "license": "Apache-2.0",
+    "metamodelVersion": 10,
+    "recommendedPackageId": null,
+    "allowedPackages": [
+        {
+            "orgId": "dsw",
+            "kmId": "root",
+            "minVersion": null,
+            "maxVersion": null
+        },
+        {
+            "orgId": "dsw",
+            "kmId": "lifesciences",
+            "minVersion": null,
+            "maxVersion": null
+        }
+    ],
+    "formats": [
+        {
+            "uuid": "b3c42edb-c858-4073-853e-751e75d8ee01",
+            "name": "Metadata (JSON)",
+            "shortName": "json",
+            "icon": "fas fa-share-alt",
+            "color": "#f15722",
+            "steps": [
+                {
+                    "name": "jinja",
+                    "options": {
+                        "template": "src/template.json.j2",
+                        "content-type": "application/json",
+                        "extension": "json"
+                    }
+                }
+            ]
+        },
+        {
+            "uuid": "b3c42edb-c858-4073-853e-751e75d8ee02",
+            "name": "Package (ZIP)",
+            "shortName": "zip",
+            "icon": "fas fa-file-archive",
+            "color": "#f15722",
+            "steps": [
+                {
+                    "name": "jinja",
+                    "options": {
+                        "template": "src/template.json.j2",
+                        "content-type": "application/json",
+                        "extension": "json"
+                    }
+                },
+                {
+                    "name":"archive",
+                    "options": {
+                        "type": "zip",
+                        "inputFileDst": "ro-crate-metadata.json"
+                    }
+                }
+            ]
+        }
+    ],
+    "_tdk": {
+        "version": "3.17.0",
+        "readmeFile": "README.md",
+        "files": [
+            "src/**/*"
+        ]
+    }
+}
