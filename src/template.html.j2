@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsnview/build/index.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jsnview/build/index.min.js"></script>
+<script>
+let data = {% include "src/template.json.j2" %};
+</script>
+    </head>
+    <body>
+    </body>
+<script>
+const options = {
+  showLen: false,
+  showType: false,
+  showBrackets: true,
+  showFoldmarker: false,
+  colors: { boolean: '#ff2929', null: '#ff2929', string: '#690', number: '#905', float: '#002f99' }
+}
+const treeView = jsnview(data, options);
+document.body.appendChild(treeView);
+</script>
+</html>

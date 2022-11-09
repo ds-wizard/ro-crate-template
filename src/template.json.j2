@@ -1,0 +1,282 @@
+{%- set km = ctx.knowledgeModel -%}
+{%- set repliesMap = ctx.questionnaireReplies -%}
+{%- set dc = ctx|to_context_obj -%}
+
+{#-
+###  INIT (descriptor)
+-#}
+{%- set entries = [] -%}
+{%- set descriptor = {
+    "@type": "CreativeWork",
+    "@id": "ro-crate-metadata.json",
+    "conformsTo": {"@id": "https://w3id.org/ro/crate/1.1"},
+    "about": {"@id": "./"}
+} -%}
+{%- do entries.append(descriptor) -%}
+
+{#-
+###  CONTRIBUTORS (person, organization, contactinfo)
+-#}
+{%- set contributorsPrefix = "1e85da40-bbfc-4180-903e-6c569ed2da38.73d686bd-7939-412e-8631-502ee6d9ea7b" -%}
+{%- set contributorItems = repliesMap[contributorsPrefix]|reply_items -%}
+{%- for item in contributorItems -%}
+    {%- set name = repliesMap[[contributorsPrefix, item, "6155ad47-3d1e-4488-9f2a-742de1e56580"]|reply_path]|reply_str_value -%}
+    {%- set email = repliesMap[[contributorsPrefix, item, "3a2ffc13-6a0e-4976-bb34-14ab6d938348"]|reply_path]|reply_str_value -%}
+    {%- set orcid = repliesMap[[contributorsPrefix, item, "6295a55d-48d7-4f3c-961a-45b38eeea41f"]|reply_path]|reply_str_value -%}
+    {%- set affiliationReply = repliesMap[[contributorsPrefix, item, "68530470-1f1c-4448-8593-63a288713a66"]|reply_path] -%}
+    {%- set roleUuids = repliesMap[[contributorsPrefix, item, "829dcda6-db8a-40ac-819a-92b9b52490f5"]|reply_path]|reply_items -%}
+    {%- set isContactPerson = "2c6ee59d-4dc9-4dcb-ac13-d969c317a117" in roleUuids -%}
+
+    {%- set person = { 
+        "@id": ctx.config.clientUrl ~ "/projects/" ~ ctx.questionnaireUuid ~ "/contributor/" ~ item,
+        "@type": "Person",
+    } -%}
+    {%- if name -%}
+        {%- do person.update({"name": name}) -%}
+    {%- endif -%}
+    {%- if email -%}
+        {%- do person.update({"email": email}) -%}
+    {%- endif -%}
+    {%- if orcid -%}
+        {%- do person.update({"@id": "https://orcid.org/" ~ orcid}) -%}
+    {%- endif -%}
+
+    {%- if affiliationReply -%}
+        {%- if affiliationReply.value.value.type == "IntegrationType" -%}
+            {%- set affiliationUrl = affiliationReply.value.value.id -%}
+            {%- set affiliationName = affiliationReply.value.value.value -%}
+        {%- elif affiliationReply.value.value.value.startswith("http") -%}
+            {%- set affiliationUrl = affiliationReply.value.value.value -%}
+        {%- endif -%}
+        {%- if affiliationUrl -%}
+            {%- set affiliation = {
+                "@id": affiliationUrl,
+                "@type": "Organization",
+                "url": affiliationUrl,
+            } -%}
+            {%- if affiliationName -%}
+                {%- do affiliation.update({"name": affiliationName}) -%}
+            {%- endif -%}
+            {%- do person.update({"affiliation": {"@id": affiliationUrl}}) -%}
+            {%- do entries.append(affiliation) -%}
+        {%- endif -%}
+    {%- endif -%}
+
+    {%- if isContactPerson and email -%}
+        {%- set mailto = "mailto:" ~ email -%}
+        {%- set contactInfo = {
+            "@id": mailto,
+            "@type": "ContactPoint",
+            "contactType": "contact person",
+            "email": email,
+            "identifier": email,
+        } -%}
+        {%- if orcid -%}
+            {%- do contactInfo.update({"url": person["@id"]}) -%}
+        {%- endif -%}
+        {%- do person.update({"contactPoint":  {"@id": mailto}}) -%}
+        {%- do entries.append(contactInfo) -%}
+    {%- endif -%}
+
+    {%- do entries.append(person) -%}
+{%- endfor -%}
+
+{#-
+### PROJECTS (project, funder, grant)
+-#}
+{%- set projectsPrefix = "1e85da40-bbfc-4180-903e-6c569ed2da38.c3dabaaf-c946-4a0d-889c-ede966f97667" -%}
+{%- set projectItems = repliesMap[projectsPrefix]|reply_items -%}
+{%- for item in projectItems -%}
+    {%- set name = repliesMap[[projectsPrefix, item, "f0ef08fd-d733-465c-bc66-5de0b826c41b"]|reply_path]|reply_str_value -%}
+    {%- set acronym = repliesMap[[projectsPrefix, item, "5b765df9-299f-4855-9e99-aa844903f8f6"]|reply_path]|reply_str_value -%}
+    {%- set abstract = repliesMap[[projectsPrefix, item, "22583d74-3c98-4e0a-b363-26d767c88212"]|reply_path]|reply_str_value -%}
+    {%- set url = repliesMap[[projectsPrefix, item, "a00ae929-d5cf-43c0-8e9e-cdb12ebde717"]|reply_path]|reply_str_value -%}
+    {%- set startDate = repliesMap[[projectsPrefix, item, "de84b9b5-bcd0-4954-8370-72ea83916b8c"]|reply_path]|reply_str_value -%}
+    {%- set endDate = repliesMap[[projectsPrefix, item, "cabc6f07-6015-454e-b97a-c34db4ec0c60"]|reply_path]|reply_str_value -%}
+
+    {%- set project = { 
+        "@id": ctx.config.clientUrl ~ "/projects/" ~ ctx.questionnaireUuid ~ "/project/" ~ item,
+        "@type": "ResearchProject",
+    } -%}
+    {%- if name -%}
+        {%- do project.update({"name": name}) -%}
+    {%- endif -%}
+    {%- if acronym -%}
+        {%- do project.update({"alternateName": acronym}) -%}
+    {%- endif -%}
+    {%- if abstract -%}
+        {%- do project.update({"description": abstract}) -%}
+    {%- endif -%}
+    {%- if url -%}
+        {%- do project.update({"url": url}) -%}
+    {%- endif -%}
+    {%- if startDate -%}
+        {%- do project.update({"foundingDate": startDate}) -%}
+    {%- endif -%}
+    {%- if endDate -%}
+        {%- do project.update({"dissolutionDate": endDate}) -%}
+    {%- endif -%}
+
+    {# PROJECT - FUNDER/FUNDING #}
+    {%- set fundingsPrefix = [projectsPrefix, item, "36a87eac-402d-43fb-a0df-ac5963bdf87d"]|reply_path -%}
+    {%- set fundingItems = repliesMap[fundingsPrefix]|reply_items -%}
+    {%- set funderUris = [] -%}
+    {%- set funders = [] -%}
+    {%- set grants = [] -%}
+    {%- for fundingItem in fundingItems -%}
+        {%- set funderReply = repliesMap[[fundingsPrefix, fundingItem, "0b12fb8c-ee0f-40c0-9c53-b6826b786a0c"]|reply_path] -%}
+        {# TODO: Funding status? #}
+        {%- set grantNumber = repliesMap[[fundingsPrefix, fundingItem, "1ccbd0bb-4263-4240-9dc5-936ef09eef53"]|reply_path]|reply_str_value -%}
+        {%- if funderReply -%}
+            {%- if funderReply.value.value.type == "IntegrationType" -%}
+                {%- set funderUrl = funderReply.value.value.id -%}
+                {%- set funderName = funderReply.value.value.value -%}
+            {%- elif funderReply.value.value.value.startswith("http") -%}
+                {%- set funderUrl = funderReply.value.value.value -%}
+            {%- endif -%}
+            {%- if funderUrl -%}
+                {%- if funderUrl not in funderUris -%}
+                    {%- do funders.append({"@id": funderUrl}) -%}
+                    {%- do funderUris.append(funderUrl) -%}
+                {%- endif -%}
+                {%- set grant = {
+                    "@id": ctx.config.clientUrl ~ "/projects/" ~ ctx.questionnaireUuid ~ "/funding/" ~ fundingItem,
+                    "@type": "Grant",
+                    "fundedItem": {"@id": project["@id"]},
+                    "funder": {"@id": funderUrl},
+                } -%}
+                {%- if grantNumber -%}
+                    {%- do grant.update({"identifier": grantNumber}) -%}
+                {%- endif -%}
+                {%- do grants.append({"@id": grant["@id"]}) -%}
+                {%- do entries.append(grant) -%}
+                {%- if funderName -%}
+                    {%- set funder = {
+                        "@id": funderUrl,
+                        "@type": "Organization",
+                        "name": funderName,
+                        "url": funderUrl,
+                    } -%}
+                    {%- do entries.append(funder) -%}
+                {%- endif -%}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if funders|length > 0 -%}
+        {%- do project.update({"funder": funders}) -%}
+    {%- endif -%}
+    {%- if grants|length > 0 -%}
+        {%- do project.update({"funding": grants}) -%}
+    {%- endif -%}
+
+    {%- do entries.append(project) -%}
+{%- endfor -%}
+
+{#-
+### PRODUCED/PUBLISHED DATASETS (dataset)
+-#}
+{%- set datasetsPrefix = "d5b27482-b598-4b8c-b534-417d4ad27394.4e0c1edf-660c-4ebf-81f5-9fa959dead30" -%}
+{%- set datasetItems = repliesMap[datasetsPrefix]|reply_items -%}
+{%- for item in datasetItems -%}
+    {%- set itemPrefix = [datasetsPrefix, item]|reply_path -%}
+    {%- set name = repliesMap[[itemPrefix, "b0949d09-d179-4491-9fb4-14b0deb9f862"]|reply_path]|reply_str_value -%}
+    {%- set description = repliesMap[[itemPrefix, "205a886d-83d7-4359-ae63-7103e05357c3"]|reply_path]|reply_str_value -%}
+    {%- if name -%}
+        {%- set dataset = {
+            "@id": "./" ~ item ~ "/",
+            "@type": "Dataset",
+            "name": name,
+        } -%}
+        {%- if description -%}
+            {%- do dataset.update({"description": description}) -%}
+        {%- endif -%}
+
+        {#- Keywords (type, personal, sensitive) -#}
+        {%- set keywords = [] -%}
+        {%- set datasetTypeAUuid = repliesMap[[itemPrefix, "3a8ed3fc-b1a6-4119-80ed-238804861734"]|reply_path]|reply_str_value -%}
+        {%- set personalAUuid = repliesMap[[itemPrefix, "a1d76760-053c-4706-80a2-cfb6c6a061f3"]|reply_path]|reply_str_value -%}
+        {%- set sensitiveAUuid = repliesMap[[itemPrefix, "cc95b399-7d8d-4232-bccf-686f78c91bff"]|reply_path]|reply_str_value -%}
+        {%- if datasetTypeAUuid == "79f7797e-f7b1-4930-b691-84bee936af20" -%}
+            {%- do keywords.append("raw data") -%}
+        {%- elif datasetTypeAUuid == "5b49df5e-1d06-446f-a518-33a06928b598" -%}
+            {%- do keywords.append("intermediate data") -%}
+        {%- elif datasetTypeAUuid == "4fa0c31a-bd3b-4ae0-8f56-639ae2212124" -%}
+            {%- do keywords.append("processed data") -%}
+            {%- do keywords.append("unpublishable results") -%}
+        {%- elif datasetTypeAUuid == "626a610e-34ac-40ca-8bf6-7926f580ae80" -%}
+            {%- do keywords.append("processed data") -%}
+            {%- do keywords.append("publishable results") -%}
+        {%- endif -%}
+        {%- if personalAUuid == "0cdc4817-7c54-4ec1-b2f4-5c007a85c7b8" -%}
+            {%- do keywords.append("personal data") -%}
+        {%- endif -%}
+        {%- if sensitiveAUuid == "2686575d-cd74-4e2c-8524-eaca6f510425" -%}
+            {%- do keywords.append("sensitive information") -%}
+        {%- endif -%}
+        {%- if keywords -%}
+            {%- do dataset.update({"keywords": keywords}) -%}
+        {%- endif -%}
+
+        {#- Identifiers -#}
+        {%- set identifiers = [] -%}
+        {%- set identifiersPrefix = [itemPrefix, "cf727a0a-78c4-45a7-aa9b-cf7650ae873a"]|reply_path -%}
+        {%- set identifierItems = repliesMap[identifiersPrefix|reply_items -%}
+        {%- for identifierItem in identifierItems -%}
+            {%- set identifier = repliesMap[[identifiersPrefix, identifierItem, "9e13b2d3-5f00-4e19-8a52-5c33c5b1cb07"]|reply_path]|reply_str_value -%}
+            {%- if identifier -%}
+                {%- do identifiers.append(identifier) -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if identifiers|length == 1 -%}
+            {%- do dataset.update({"identifier": identifiers[0]}) -%}
+        {%- elif identifiers|length > 1 -%}
+            {%- do dataset.update({"identifier": identifiers}) -%}
+        {%- endif -%}
+
+        {#- Published - Distributions -#}
+        {%- set willBePublishedPath = [itemPrefix, "a063da1c-aaea-4e18-85ec-f560d833f292"]|reply_path -%}
+        {%- set willBePublishedAUuid = repliesMap[willBePublishedPath]|reply_str_value -%}
+        {%- if willBePublishedAUuid == "8d1b07a7-f177-41f5-9532-05536223a8d6" -%}
+            {%- set distributions = [] -%}
+            {%- set distributionsPath = [willBePublishedPath, willBePublishedAUuid, "81d3095e-a530-40a4-878e-ced42fabc4cd"]|reply_path -%}
+            {%- set distributionItems = repliesMap[distributionsPath]|reply_items -%}
+            {%- for distributionItem in distributionItems -%}
+                {%- set distroEntry = {
+                    "@id": "./" ~ item ~ "/" ~ distributionItem ~ "/",
+                    "@type": "DataDownload",
+                } -%}
+
+                {#- PIDs -#}
+                {%- set distroPidHasPath = [distributionsPath, distributionItem, "d21fdb06-22bf-418e-aa40-dc5ef1485f56"]|reply_path -%}
+                {%- set distroPidHasAUuid = repliesMap[distroPidHasPath]|reply_path -%}
+                {%- if distroPidHasAUuid == "1072923b-8330-4da1-9b5f-9880afa053a9" -%}
+                    {%- set distroPidPath = [distroPidHasPath, distroPidHasAUuid, "22e898b5-87c2-4c29-89b3-fd08bce01a23"]|reply_path  -%}
+                    {%- set distroPid = repliesMap[distroPidPath]|reply_str_value -%}
+                    {%- if distroPid -%}
+                        {%- do distroEntry.update({"@id": distroPid}) -%}
+                    {%- endif -%}
+                {%- endif -%}
+                
+                {%- do distributions.append({"@id": distroEntry["@id"]}) -%}
+                {%- do entries.append(distroEntry) -%}
+            {%- endfor -%}
+            
+            {%- if distributions|length == 1 -%}
+                {%- do dataset.update({"distribution": distributions[0]}) -%}
+            {%- elif distributions|length > 1 -%}
+                {%- do dataset.update({"distribution": distributions}) -%}
+            {%- endif -%}
+        {%- endif -%}
+
+        {%- do entries.append(dataset) -%}
+    {%- endif -%}
+{%- endfor -%}
+
+{#-
+### END (print out JSON-LD)
+-#}
+{%- set metadata = {
+    "@context": "https://w3id.org/ro/crate/1.1/context", 
+    "@graph": entries,
+} -%}
+{{ metadata|tojson(2) }}

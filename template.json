@@ -1,0 +1,84 @@
+{
+    "templateId": "ro-crate",
+    "organizationId": "dsw",
+    "version": "0.1.0",
+    "name": "RO-Crate",
+    "description": "RO-Crate export from DSW projects",
+    "license": "Apache-2.0",
+    "metamodelVersion": 11,
+    "allowedPackages": [
+        {
+            "orgId": "dsw",
+            "kmId": "root",
+            "minVersion": null,
+            "maxVersion": null
+        },
+        {
+            "orgId": "dsw",
+            "kmId": "lifesciences",
+            "minVersion": null,
+            "maxVersion": null
+        }
+    ],
+    "formats": [
+        {
+            "uuid": "b3c42edb-c858-4073-853e-751e75d8ee01",
+            "name": "Metadata (JSON)",
+            "icon": "fas fa-share-alt",
+            "steps": [
+                {
+                    "name": "jinja",
+                    "options": {
+                        "template": "src/template.json.j2",
+                        "content-type": "application/json",
+                        "extension": "json"
+                    }
+                }
+            ]
+        },
+        {
+            "uuid": "b3c42edb-c858-4073-853e-751e75d8ee11",
+            "name": "Preview (HTML)",
+            "icon": "fas fa-share-alt",
+            "steps": [
+                {
+                    "name": "jinja",
+                    "options": {
+                        "template": "src/template.html.j2",
+                        "content-type": "text/html",
+                        "extension": "html"
+                    }
+                }
+            ]
+        },
+        {
+            "uuid": "b3c42edb-c858-4073-853e-751e75d8ee02",
+            "name": "Package (ZIP)",
+            "icon": "fas fa-file-archive",
+            "steps": [
+                {
+                    "name": "jinja",
+                    "options": {
+                        "template": "src/template.json.j2",
+                        "content-type": "application/json",
+                        "extension": "json"
+                    }
+                },
+                {
+                    "name":"archive",
+                    "options": {
+                        "type": "zip",
+                        "inputFileDst": "ro-crate-metadata.json"
+                    }
+                }
+            ]
+        }
+    ],
+    "_tdk": {
+        "version": "3.20.0",
+        "readmeFile": "README.md",
+        "files": [
+            "src/**/*"
+        ]
+    }
+}
